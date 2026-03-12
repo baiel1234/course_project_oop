@@ -1,0 +1,48 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.pyc
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Django stuff
+*.log
+*.pot
+local_settings.py  # Or whatever local settings file you use for secrets
+
+# Database
+db.sqlite3  # If you are using the default SQLite database
+
+# Static and Media files (generated during deployment)
+static_cdn/
+media/
+staticfiles/
+
+# IDE specific files (e.g. VS Code, PyCharm)
+.idea/
+.vscode/
+.spyderproject
+.spyproject
+
+# OS specific files
+.DS_Store # macOS
+# thumbs.db # Windows
+
+# Unit test and coverage reports
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+
+# Migrations
+# Generally, migration files should *not* be ignored, as they are part of the codebase.
+# The only file you should not ignore in a migrations folder is the __init__.py file.
