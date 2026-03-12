@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import submit_test,create_test,add_questions_bulk,get_tests,get_test
+from .views import submit_test,create_test,add_questions_bulk,get_tests,get_test,edit_test,update_answers,delete_test
 
 urlpatterns = [
     path('submit/', submit_test),
@@ -7,5 +7,7 @@ urlpatterns = [
     path("add_question/", add_questions_bulk),
     path("list/", get_tests),
     path("<int:test_id>/", get_test),
-
+    path("edit/<int:test_id>/", edit_test),
+    path("update_answers/<int:test_id>/", update_answers),
+    path("delete/<int:test_id>/", delete_test),
 ]
