@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Teacher Dashboard</h2>
+
+<a href="/teacher/create_test/">
+
+<button>Create Test</button>
+
+</a>
+
+<br><br>
+
+{% for test in tests %}
+
+<div>
+
+<h3>{{test.title}}</h3>
+
+<a href="/teacher/edit/{{test.id}}/">Edit</a>
+
+<a href="/teacher/delete/{{test.id}}/">Delete</a>
+
+<a href="/teacher/results/{{test.id}}/">Results</a>
+
+</div>
+
+{% endfor %}
+
+{% endblock %}

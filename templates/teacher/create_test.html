@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Create Test</h2>
+
+<form method="POST" enctype="multipart/form-data">
+
+{% csrf_token %}
+
+<input name="title" placeholder="Title"><br><br>
+
+<textarea name="description"></textarea><br><br>
+
+<input type="file" name="pdf_file"><br><br>
+
+<input name="question_count" type="number"><br><br>
+
+<button>Create</button>
+
+</form>
+
+{% endblock %}

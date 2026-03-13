@@ -18,6 +18,16 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
+from users.views import login_view, register_view
+from tests.views import (home,
+                        student_tests,
+                        test_page,
+                        student_results,
+                        teacher_dashboard,
+                        create_test_page,
+                        edit_test_page,
+                        delete_test,
+                        test_results)
 
 
 urlpatterns = [
@@ -25,6 +35,22 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('tests/', include('tests.urls')),
     path("results/", include("results.urls")),
+    path('', home),
+
+    path('login/', login_view),
+    path('register/', register_view),
+
+    # student
+    path('tests/', student_tests),
+    path('test/<int:test_id>/', test_page),
+    path('my_results/', student_results),
+
+    # teacher
+    path('teacher/', teacher_dashboard),
+    path('teacher/create_test/', create_test_page),
+    path('teacher/edit/<int:test_id>/', edit_test_page),
+    path('teacher/delete/<int:test_id>/', delete_test),
+    path('teacher/results/<int:test_id>/', test_results),
 ]
 
 

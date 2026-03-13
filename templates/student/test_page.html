@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>{{test.title}}</h2>
+
+<div style="display:flex; gap:40px;">
+
+<div style="width:60%;">
+
+<iframe src="{{test.pdf_file.url}}" width="100%" height="600"></iframe>
+
+</div>
+
+<div style="width:40%;">
+
+<form method="POST">
+
+{% csrf_token %}
+
+{% for q in questions %}
+
+<p>Question {{q.number}}</p>
+
+<label><input type="radio" name="q{{q.number}}" value="A"> A</label><br>
+
+<label><input type="radio" name="q{{q.number}}" value="B"> B</label><br>
+
+<label><input type="radio" name="q{{q.number}}" value="C"> C</label><br>
+
+<label><input type="radio" name="q{{q.number}}" value="D"> D</label>
+
+<br><br>
+
+{% endfor %}
+
+<button type="submit">Submit Test</button>
+
+</form>
+
+</div>
+
+</div>
+
+{% endblock %}

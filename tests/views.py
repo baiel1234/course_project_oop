@@ -4,6 +4,8 @@ from .models import Test,Question
 from results.models import Result
 import json
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
+from django.shortcuts import render
 
 @csrf_exempt
 def create_test(request):
@@ -95,8 +97,26 @@ def add_questions_bulk(request):
         test_id = data["test_id"]
         answers = data["answers"]
 
-        test = Test.objects.get(id=test_id)
+        try:
+            test = Test.objects.get(id=test_id)
+        except Test.DoesNotExist:
+            return JsonResponse({"error": "Test not found"}, status=404)
 
+        # проверяем количество ответов
+        if len(answers) != test.question_count:
+            return JsonResponse(
+                {
+                    "error": "answers count must equal question_count",
+                    "question_count": test.question_count,
+                    "answers_received": len(answers)
+                },
+                status=400
+            )
+
+        # удаляем старые вопросы (если есть)
+        Question.objects.filter(test=test).delete()
+
+        # создаём новые
         for index, answer in enumerate(answers, start=1):
 
             Question.objects.create(
@@ -105,19 +125,33 @@ def add_questions_bulk(request):
                 correct_answer=answer
             )
 
-        return JsonResponse({"message": "questions added"})
+        return JsonResponse({
+            "message": "questions added",
+            "questions_created": len(answers)
+        })
 
 @csrf_exempt
 def get_test(request, test_id):
 
     test = get_object_or_404(Test, id=test_id)
 
+    questions = Question.objects.filter(test=test).order_by("number")
+
+    questions_data = []
+
+    for q in questions:
+        questions_data.append({
+            "number": q.number,
+            "correct_answer": q.correct_answer
+        })
+
     data = {
         "id": test.id,
         "title": test.title,
         "description": test.description,
         "pdf_file": test.pdf_file.url,
-        "question_count": test.question_count
+        "question_count": test.question_count,
+        "questions": questions_data
     }
 
     return JsonResponse(data)
@@ -180,4 +214,78 @@ def delete_test(request, test_id):
             "message": "Test deleted"
         })
 
-#добавь админку в которой можно будет удалять пользователей / создавать ,изменять и удалять тесты и вопросы
+@csrf_exempt
+def search_tests(request):
+
+    query = request.GET.get("q", "")
+
+    tests = Test.objects.filter(
+        Q(title__icontains=query) |
+        Q(description__icontains=query) |
+        Q(teacher__username__icontains=query)
+    )
+
+    data = []
+
+    for test in tests:
+        data.append({
+            "id": test.id,
+            "title": test.title,
+            "description": test.description,
+            "teacher": test.teacher.username,
+            "question_count": test.question_count,
+            "pdf_file": test.pdf_file.url
+        })
+
+    return JsonResponse(data, safe=False)
+
+@csrf_exempt
+def home(request):
+
+    query = request.GET.get("q")
+
+    if query:
+        tests = Test.objects.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query)
+        )
+    else:
+        tests = Test.objects.all()
+
+    return render(request, "home.html", {"tests": tests})
+
+def student_tests(request):
+    """Страница списка тестов для студента"""
+    tests = Test.objects.all()
+    return render(request, "student/tests.html", {"tests": tests})
+
+def test_page(request, test_id):
+    """Страница прохождения конкретного теста"""
+    test = get_object_or_404(Test, id=test_id)
+    questions = Question.objects.filter(test=test).order_by("number")
+    return render(request, "student/test_page.html", {"test": test, "questions": questions})
+
+def student_results(request):
+    """Страница просмотра своих результатов"""
+    results = request.user.result_set.all()  # Assuming Result has ForeignKey to user
+    return render(request, "student/results.html", {"results": results})
+
+def teacher_dashboard(request):
+    """Главная панель учителя"""
+    tests = Test.objects.filter(teacher=request.user)
+    return render(request, "teacher/dashboard.html", {"tests": tests})
+
+def create_test_page(request):
+    """Страница создания теста"""
+    return render(request, "teacher/create_test.html")
+
+def edit_test_page(request, test_id):
+    """Страница редактирования теста"""
+    test = get_object_or_404(Test, id=test_id)
+    return render(request, "teacher/edit_test.html", {"test": test})
+
+def test_results(request, test_id):
+    """Просмотр результатов студентов по конкретному тесту"""
+    test = get_object_or_404(Test, id=test_id)
+    results = Result.objects.filter(test=test)
+    return render(request, "teacher/test_results.html", {"results": results, "test": test})
