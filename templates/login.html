@@ -5,20 +5,20 @@
 <h2>Login</h2>
 
 <form method="POST">
+    {% csrf_token %}
 
-{% csrf_token %}
-
-<input type="text" name="username" placeholder="Username">
-
-<br><br>
-
-<input type="password" name="password" placeholder="Password">
-
-<br><br>
-
-<a href="/home/"></a>
-<button type="submit">Login</button>
-
+    <input type="text" name="username" placeholder="Username"><br><br>
+    <input type="password" name="password" placeholder="Password"><br><br>
+    <button type="submit">Login</button>
 </form>
+
+<!-- Показываем ошибки логина -->
+{% if messages %}
+<ul>
+    {% for message in messages %}
+        <li>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
 
 {% endblock %}

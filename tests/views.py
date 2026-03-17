@@ -6,8 +6,11 @@ import json
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.shortcuts import render
+from .decorators import teacher_required, teacher_owner_required , login_required
+
 
 @csrf_exempt
+@teacher_required
 def create_test(request):
 
     if request.method == "POST":
@@ -88,6 +91,7 @@ def submit_test(request):
         })
 
 @csrf_exempt
+@teacher_owner_required
 def add_questions_bulk(request):
 
     if request.method == "POST":
@@ -131,6 +135,7 @@ def add_questions_bulk(request):
         })
 
 @csrf_exempt
+@login_required
 def get_test(request, test_id):
 
     test = get_object_or_404(Test, id=test_id)
@@ -239,6 +244,9 @@ def search_tests(request):
 
     return JsonResponse(data, safe=False)
 
+
+
+# ----------------------------------------------- HTML ------------------------------------------------------------------
 @csrf_exempt
 def home(request):
 
@@ -252,7 +260,15 @@ def home(request):
     else:
         tests = Test.objects.all()
 
-    return render(request, "home.html", {"tests": tests})
+    role = None
+
+    if request.user.is_authenticated:
+        role = request.user.profile.role
+
+    return render(request, "home.html", {
+        "tests": tests,
+        "role": role
+    })
 
 def student_tests(request):
     """Страница списка тестов для студента"""

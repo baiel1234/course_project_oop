@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 import json
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.csrf import csrf_exempt
 from .models import Profile
 from django.shortcuts import render, redirect
@@ -64,4 +64,33 @@ def login_view(request):
 
 @csrf_exempt
 def register_view(request):
+
+    if request.method == "POST":
+
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        role = request.POST.get("role")
+
+        user = User.objects.create_user(
+            username=username,
+            password=password
+        )
+
+        Profile.objects.create(
+            user=user,
+            role=role
+        )
+
+        return redirect("login")   # ← переход на страницу логина
+
     return render(request, "register.html")
+
+@csrf_exempt
+def logout_api(request):
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "user not logged in"}, status=401)
+
+    logout(request)
+
+    return JsonResponse({"status": "logged out"})

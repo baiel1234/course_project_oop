@@ -35,6 +35,8 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('tests/', include('tests.urls')),
     path("results/", include("results.urls")),
+
+    #front
     path('', home),
 
     path('login/', login_view),
