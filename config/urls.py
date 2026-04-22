@@ -18,16 +18,17 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
-from users.views import login_view, register_view
+from users.views import login_view, register_view, logout_view
 from tests.views import (home,
                         student_tests,
                         test_page,
                         student_results,
                         teacher_dashboard,
-                        create_test_page,
+                        create_test_view,
                         edit_test_page,
                         delete_test,
-                        test_results)
+                        test_results,
+                        add_questions_view)
 
 
 urlpatterns = [
@@ -39,8 +40,9 @@ urlpatterns = [
     #front
     path('', home),
 
-    path('login/', login_view),
-    path('register/', register_view),
+    path('login/', login_view, name='login'),
+    path('register/', register_view, name='register'),
+    path('logout/', logout_view, name='logout'),
 
     # student
     path('tests/', student_tests),
@@ -48,11 +50,12 @@ urlpatterns = [
     path('my_results/', student_results),
 
     # teacher
-    path('teacher/', teacher_dashboard),
-    path('teacher/create_test/', create_test_page),
+    path('teacher/', teacher_dashboard, name='teacher_dashboard'),
+    path('teacher/create_test/', create_test_view, name='create_test'),
     path('teacher/edit/<int:test_id>/', edit_test_page),
     path('teacher/delete/<int:test_id>/', delete_test),
     path('teacher/results/<int:test_id>/', test_results),
+    path('teacher/add-questions/<int:test_id>/', add_questions_view, name='add_questions_page')
 ]
 
 

@@ -5,7 +5,7 @@ from results.models import Result
 import json
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .decorators import teacher_required, teacher_owner_required , login_required
 
 
@@ -90,7 +90,6 @@ def submit_test(request):
             "total": len(questions)
         })
 
-@csrf_exempt
 @teacher_owner_required
 def add_questions_bulk(request):
 
@@ -106,7 +105,6 @@ def add_questions_bulk(request):
         except Test.DoesNotExist:
             return JsonResponse({"error": "Test not found"}, status=404)
 
-        # проверяем количество ответов
         if len(answers) != test.question_count:
             return JsonResponse(
                 {
@@ -117,10 +115,8 @@ def add_questions_bulk(request):
                 status=400
             )
 
-        # удаляем старые вопросы (если есть)
         Question.objects.filter(test=test).delete()
 
-        # создаём новые
         for index, answer in enumerate(answers, start=1):
 
             Question.objects.create(
@@ -133,6 +129,13 @@ def add_questions_bulk(request):
             "message": "questions added",
             "questions_created": len(answers)
         })
+
+        print("BODY:", request.body)
+
+        data = json.loads(request.body)
+
+        print("DATA:", data)
+        print("ANSWERS:", data.get("answers"))
 
 @csrf_exempt
 @login_required
@@ -283,7 +286,7 @@ def test_page(request, test_id):
 
 def student_results(request):
     """Страница просмотра своих результатов"""
-    results = request.user.result_set.all()  # Assuming Result has ForeignKey to user
+    results = request.user.result_set.all()  
     return render(request, "student/results.html", {"results": results})
 
 def teacher_dashboard(request):
@@ -291,9 +294,42 @@ def teacher_dashboard(request):
     tests = Test.objects.filter(teacher=request.user)
     return render(request, "teacher/dashboard.html", {"tests": tests})
 
-def create_test_page(request):
-    """Страница создания теста"""
+def create_test_view(request):
+
+    if request.method == "POST":
+
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+        question_count = request.POST.get("question_count")
+        pdf_file = request.FILES.get("pdf_file")
+
+        if not title or not question_count:
+            return render(request, "teacher/create_test.html", {
+                "error": "Заполни обязательные поля"
+            })
+
+        test = Test.objects.create(
+            title=title,
+            description=description,
+            question_count=question_count,
+            pdf_file=pdf_file,
+            teacher=request.user
+        )
+
+        return redirect("add_questions_page", test.id)
+
     return render(request, "teacher/create_test.html")
+
+@login_required
+def add_questions_view(request, test_id):
+
+    test = Test.objects.get(id=test_id)
+
+    return render(request, "teacher/add_questions.html", {
+        "test": test,
+        "range": range(test.question_count)
+    })
+    
 
 def edit_test_page(request, test_id):
     """Страница редактирования теста"""

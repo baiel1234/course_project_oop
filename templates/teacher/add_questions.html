@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Add Answers for: {{ test.title }}</h2>
+
+<form id="answersForm">
+
+{% for i in range %}
+    <label>Question {{ forloop.counter }}</label><br>
+
+    <select name="answer">
+        <option value="">--Select--</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+    </select>
+
+    <br><br>
+{% endfor %}
+
+<button type="submit">Save Answers</button>
+
+</form>
+
+<script>
+
+const testId = {{ test.id }};
+
+document.getElementById("answersForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    let inputs = document.querySelectorAll('select[name="answer"]');
+    let answers = [];
+
+    inputs.forEach(input => {
+        answers.push(input.value);
+    });
+
+    if (answers.includes("")) {
+        alert("Выбери ответы для всех вопросов");
+        return;
+    }
+
+    fetch("/tests/add-questions/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            test_id: testId,
+            answers: answers
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.message){
+            alert("save!");
+            window.location.href = "/";
+        } else {
+            alert(data.error);
+        }
+    });
+
+});
+
+</script>
+
+{% endblock %}
