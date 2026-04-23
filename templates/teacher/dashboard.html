@@ -2,30 +2,57 @@
 
 {% block content %}
 
-<h2>Teacher Dashboard</h2>
+<div class="container">
+
+<h2> Teacher Dashboard</h2>
 
 <a href="/teacher/create_test/">
-
-<button>Create Test</button>
-
+    <button> Create Test</button>
 </a>
 
 <br><br>
 
 {% for test in tests %}
 
-<div>
+<div class="card">
 
-<h3>{{test.title}}</h3>
+<h3>{{ test.title }}</h3>
+<p>{{ test.description }}</p>
 
-<a href="/teacher/add-questions/{{test.id}}/">Edit</a>
+<div style="display:flex; gap:10px;">
 
-<a href="/teacher/delete/{{test.id}}/">Delete</a>
+<a href="/teacher/add-questions/{{ test.id }}/">
+    <button> Edit</button>
+</a>
 
-<a href="/teacher/results/{{test.id}}/">Results</a>
+<button class="danger" onclick="deleteTest({{ test.id }})">
+     Delete
+</button>
+
+<a href="/teacher/results/{{ test.id }}/">
+    <button> Results</button>
+</a>
+
+</div>
 
 </div>
 
 {% endfor %}
+
+</div>
+
+<script>
+function deleteTest(id) {
+
+    if(!confirm("Delete this test?")) return;
+
+    fetch(`/tests/delete/${id}/`, {
+        method: "DELETE"
+    })
+    .then(res => res.json())
+    .then(() => location.reload());
+
+}
+</script>
 
 {% endblock %}

@@ -2,69 +2,36 @@
 
 {% block content %}
 
-<h2>Add Answers for: {{ test.title }}</h2>
+<div class="container">
 
-<form id="answersForm">
+<h2> Add Answers: {{ test.title }}</h2>
+
+<div class="card">
+
+<form method="POST">
+{% csrf_token %}
+
+<input type="hidden" name="test_id" value="{{ test.id }}">
 
 {% for i in range %}
-    <label>Question {{ forloop.counter }}</label><br>
 
-    <select name="answer">
-        <option value="">--Select--</option>
-        <option value="A">A</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-        <option value="D">D</option>
-    </select>
+<div class="options">
+    <b>Question {{ forloop.counter }}</b><br>
 
-    <br><br>
+    <label><input type="radio" name="q{{ forloop.counter }}" value="A"> A</label>
+    <label><input type="radio" name="q{{ forloop.counter }}" value="B"> B</label>
+    <label><input type="radio" name="q{{ forloop.counter }}" value="C"> C</label>
+    <label><input type="radio" name="q{{ forloop.counter }}" value="D"> D</label>
+</div>
+
 {% endfor %}
 
-<button type="submit">Save Answers</button>
+<button type="submit"> Save Answers</button>
 
 </form>
 
-<script>
+</div>
 
-const testId = {{ test.id }};
-
-document.getElementById("answersForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-
-    let inputs = document.querySelectorAll('select[name="answer"]');
-    let answers = [];
-
-    inputs.forEach(input => {
-        answers.push(input.value);
-    });
-
-    if (answers.includes("")) {
-        alert("Выбери ответы для всех вопросов");
-        return;
-    }
-
-    fetch("/tests/add-questions/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            test_id: testId,
-            answers: answers
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.message){
-            alert("save!");
-            window.location.href = "/";
-        } else {
-            alert(data.error);
-        }
-    });
-
-});
-
-</script>
+</div>
 
 {% endblock %}

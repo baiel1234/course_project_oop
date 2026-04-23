@@ -2,26 +2,28 @@
 
 {% block content %}
 
-<h2>Available Tests</h2>
+<div class="container">
+
+<h2> Available Tests</h2>
 
 {% for test in tests %}
 
-<div style="background:white;padding:20px;margin-bottom:15px;">
+<div class="card">
 
-<h3>{{test.title}}</h3>
+<h3>{{ test.title }}</h3>
 
-<p>{{test.description}}</p>
+<p>{{ test.description }}</p>
 
-<p>Questions: {{test.question_count}}</p>
+<p> Questions: {{ test.question_count }}</p>
 
-<a href="/test/{{test.id}}/">
-
-<button>Start Test</button>
-
+<a href="/test/{{ test.id }}/">
+    <button>Start Test</button>
 </a>
 
 </div>
 
 {% endfor %}
+
+</div>
 
 {% endblock %}

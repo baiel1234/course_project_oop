@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.csrf import csrf_exempt
 from .models import Profile
 from django.shortcuts import render, redirect
+from django.contrib import messages
 
 
 @csrf_exempt
@@ -46,6 +47,22 @@ def user_login(request):
 
     return JsonResponse({"error": "invalid credentials"})
 
+@csrf_exempt
+def logout_api(request):
+    if request.method != "PUT":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "user not logged in"}, status=401)
+
+    logout(request)
+
+    return JsonResponse({"status": "logged out"})
+
+
+# ---------------------------- html ----------------------------=-===========
+
+
 def login_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
@@ -81,18 +98,6 @@ def register_view(request):
         return redirect("login")   
 
     return render(request, "register.html")
-
-@csrf_exempt
-def logout_api(request):
-    if request.method != "PUT":
-        return JsonResponse({"error": "POST required"}, status=405)
-
-    if not request.user.is_authenticated:
-        return JsonResponse({"error": "user not logged in"}, status=401)
-
-    logout(request)
-
-    return JsonResponse({"status": "logged out"})
 
 def logout_view(request):
     logout(request)

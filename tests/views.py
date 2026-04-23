@@ -7,6 +7,8 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.shortcuts import render, redirect
 from .decorators import teacher_required, teacher_owner_required , login_required
+from django.http import FileResponse
+import os
 
 
 @csrf_exempt
@@ -52,44 +54,40 @@ def get_tests(request):
 @csrf_exempt
 def submit_test(request):
 
-    if request.method == "POST":
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
 
-        data = json.loads(request.body)
+    data = json.loads(request.body)
 
-        test_id = data["test_id"]
-        student_answers = data["answers"]
+    student_answers = data.get("answers", [])
 
-        test = Test.objects.get(id=test_id)
+    test = Test.objects.get(id=test_id)
+    questions = Question.objects.filter(test=test).order_by("number")
 
-        questions = Question.objects.filter(test=test).order_by("number")
-
-        score = 0
-
-        if len(student_answers) != questions.count():
-            return JsonResponse({
-                "error": "answers count must equal questions count"
-            }, status=400)
-
-        for i, question in enumerate(questions):
-
-            if i < len(student_answers):
-
-                if question.correct_answer == student_answers[i]:
-
-                    score += 1
-
-        result = Result.objects.create(
-            student=request.user,
-            test=test,
-            score=score,
-            total=len(questions)
-        )
-
+    if len(student_answers) != questions.count():
         return JsonResponse({
-            "score": score,
-            "total": len(questions)
-        })
+            "error": "answers count must match"
+        }, status=400)
 
+    score = 0
+
+    for i, question in enumerate(questions):
+        if question.correct_answer == student_answers[i]:
+            score += 1
+
+    Result.objects.create(
+        student=request.user,
+        test=test,
+        score=score,
+        total=questions.count()
+    )
+
+    return JsonResponse({
+        "score": score,
+        "total": questions.count()
+    })
+
+@csrf_exempt
 @teacher_owner_required
 def add_questions_bulk(request):
 
@@ -216,11 +214,13 @@ def delete_test(request, test_id):
         except Test.DoesNotExist:
             return JsonResponse({"error": "Test not found"}, status=404)
 
+        if test.pdf_file:
+            if os.path.isfile(test.pdf_file.path):
+                os.remove(test.pdf_file.path)
+
         test.delete()
 
-        return JsonResponse({
-            "message": "Test deleted"
-        })
+        return JsonResponse({"message": "Test deleted"})
 
 @csrf_exempt
 def search_tests(request):
@@ -274,23 +274,42 @@ def home(request):
     })
 
 def student_tests(request):
-    """Страница списка тестов для студента"""
     tests = Test.objects.all()
     return render(request, "student/tests.html", {"tests": tests})
 
-def test_page(request, test_id):
-    """Страница прохождения конкретного теста"""
+def test_page_view(request, test_id):
+
     test = get_object_or_404(Test, id=test_id)
-    questions = Question.objects.filter(test=test).order_by("number")
-    return render(request, "student/test_page.html", {"test": test, "questions": questions})
+    questions = Question.objects.filter(test=test)
+
+    if request.method == "POST":
+
+        answers = []
+
+        for q in questions:
+            ans = request.POST.get(f"q{q.number}")
+
+            if not ans:
+                return render(request, "student/test_page.html", {
+                    "test": test,
+                    "questions": questions,
+                    "error": "Ответь на все вопросы"
+                })
+
+            answers.append(ans)
+
+        return redirect("home")
+
+    return render(request, "student/test_page.html", {
+        "test": test,
+        "questions": questions
+    })
 
 def student_results(request):
-    """Страница просмотра своих результатов"""
     results = request.user.result_set.all()  
     return render(request, "student/results.html", {"results": results})
 
 def teacher_dashboard(request):
-    """Главная панель учителя"""
     tests = Test.objects.filter(teacher=request.user)
     return render(request, "teacher/dashboard.html", {"tests": tests})
 
@@ -323,21 +342,93 @@ def create_test_view(request):
 @login_required
 def add_questions_view(request, test_id):
 
-    test = Test.objects.get(id=test_id)
+    test = get_object_or_404(Test, id=test_id)
+
+    if request.method == "POST":
+
+        answers = []
+
+        for i in range(1, int(test.question_count) + 1):
+            ans = request.POST.get(f"q{i}")
+
+            if not ans:
+                return render(request, "teacher/add_questions.html", {
+                    "test": test,
+                    "range": range(int(test.question_count)),
+                    "error": "Ответь на все вопросы"
+                })
+
+            answers.append(ans)
+
+        Question.objects.filter(test=test).delete()
+
+        for i, answer in enumerate(answers, start=1):
+            Question.objects.create(
+                test=test,
+                number=i,
+                correct_answer=answer
+            )
+
+        return redirect("home")
 
     return render(request, "teacher/add_questions.html", {
         "test": test,
-        "range": range(test.question_count)
+        "range": range(int(test.question_count))
     })
     
 
 def edit_test_page(request, test_id):
-    """Страница редактирования теста"""
     test = get_object_or_404(Test, id=test_id)
     return render(request, "teacher/edit_test.html", {"test": test})
 
 def test_results(request, test_id):
-    """Просмотр результатов студентов по конкретному тесту"""
     test = get_object_or_404(Test, id=test_id)
     results = Result.objects.filter(test=test)
     return render(request, "teacher/test_results.html", {"results": results, "test": test})
+
+def view_pdf(request, test_id):
+    test = get_object_or_404(Test, id=test_id)
+
+    return FileResponse(test.pdf_file.open(), content_type='application/pdf')
+
+    response = FileResponse(test.pdf_file.open(), content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="test.pdf"'
+    return response
+
+def submit_test_view(request, test_id):
+
+    test = get_object_or_404(Test, id=test_id)
+    questions = Question.objects.filter(test=test).order_by("number")
+
+    if request.method == "POST":
+
+        student_answers = []
+
+        for q in questions:
+            ans = request.POST.get(f"q{q.number}")
+
+            if not ans:
+                return render(request, "test_detail.html", {
+                    "test": test,
+                    "questions": questions,
+                    "error": "Ответь на все вопросы"
+                })
+
+            student_answers.append(ans)
+
+        score = 0
+
+        for i, question in enumerate(questions):
+            if question.correct_answer == student_answers[i]:
+                score += 1
+
+        Result.objects.create(
+            student=request.user,
+            test=test,
+            score=score,
+            total=questions.count()
+        )
+
+        return redirect("home")
+
+    return redirect("home")

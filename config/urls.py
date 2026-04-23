@@ -21,14 +21,16 @@ from django.conf import settings
 from users.views import login_view, register_view, logout_view
 from tests.views import (home,
                         student_tests,
-                        test_page,
+                        test_page_view,
                         student_results,
                         teacher_dashboard,
                         create_test_view,
                         edit_test_page,
                         delete_test,
                         test_results,
-                        add_questions_view)
+                        add_questions_view,
+                        view_pdf,
+                        submit_test_view)
 
 
 urlpatterns = [
@@ -46,8 +48,10 @@ urlpatterns = [
 
     # student
     path('tests/', student_tests),
-    path('test/<int:test_id>/', test_page),
-    path('my_results/', student_results),
+    path('test/<int:test_id>/',test_page_view, name='test_page'),
+    path('my_results/', student_results, name='my_results'),
+    path('pdf/<int:test_id>/', view_pdf, name='view_pdf'),
+    path('submit-test/<int:test_id>/', submit_test_view, name='submit_test'),
 
     # teacher
     path('teacher/', teacher_dashboard, name='teacher_dashboard'),

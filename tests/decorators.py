@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from .models import Test
+from functools import wraps
 
 def login_required(view_func):
 
@@ -15,17 +16,16 @@ def login_required(view_func):
 
 def teacher_owner_required(view_func):
 
-    def wrapper(request, test_id, *args, **kwargs):
-
-        test = get_object_or_404(Test, id=test_id)
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
 
         if not request.user.is_authenticated:
-            return JsonResponse({"error": "login required"}, status=401)
+            return JsonResponse({"error": "not logged in"}, status=401)
 
-        if test.teacher != request.user:
-            return JsonResponse({"error": "not your test"}, status=403)
+        if not hasattr(request.user, "profile") or request.user.profile.role != "teacher":
+            return JsonResponse({"error": "only teacher allowed"}, status=403)
 
-        return view_func(request, test_id, *args, **kwargs)
+        return view_func(request, *args, **kwargs)
 
     return wrapper
 

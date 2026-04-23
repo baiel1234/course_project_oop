@@ -2,41 +2,43 @@
 
 {% block content %}
 
-<h2>{{test.title}}</h2>
+<div class="container">
 
-<div style="display:flex; gap:40px;">
+<h2>{{ test.title }}</h2>
 
-<div style="width:60%;">
+<div style="display:flex; gap:20px;">
 
-<iframe src="{{test.pdf_file.url}}" width="100%" height="600"></iframe>
-
+<div style="flex:2;" class="card">
+    <iframe src="{% url 'view_pdf' test.id %}" width="100%" height="600" style="border:none;"></iframe>
 </div>
 
-<div style="width:40%;">
+<div style="flex:1;" class="card">
 
-<form method="POST">
-
+<form method="POST" action="{% url 'submit_test' test.id %}">
 {% csrf_token %}
 
 {% for q in questions %}
 
-<p>Question {{q.number}}</p>
+<div class="options">
 
-<label><input type="radio" name="q{{q.number}}" value="A"> A</label><br>
+<p><b>Q{{ q.number }}</b></p>
 
-<label><input type="radio" name="q{{q.number}}" value="B"> B</label><br>
+<label><input type="radio" name="q{{ q.number }}" value="A"> A</label>
+<label><input type="radio" name="q{{ q.number }}" value="B"> B</label>
+<label><input type="radio" name="q{{ q.number }}" value="C"> C</label>
+<label><input type="radio" name="q{{ q.number }}" value="D"> D</label>
 
-<label><input type="radio" name="q{{q.number}}" value="C"> C</label><br>
-
-<label><input type="radio" name="q{{q.number}}" value="D"> D</label>
-
-<br><br>
+</div>
 
 {% endfor %}
+
+<div id="result" style="margin:10px 0;font-weight:bold;"></div>
 
 <button type="submit">Submit Test</button>
 
 </form>
+
+</div>
 
 </div>
 
